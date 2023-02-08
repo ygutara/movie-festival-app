@@ -12,9 +12,11 @@ func (User) TableName() string {
 }
 
 type UserToken struct {
-	ID     int `gorm:"primaryKey"`
-	UserID int
-	Token  string
+	ID       int `gorm:"primaryKey"`
+	UserID   int
+	User     *User `gorm:"save_associations:false"`
+	Token    string
+	IsActive bool
 }
 
 func (UserToken) TableName() string {

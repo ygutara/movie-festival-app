@@ -16,11 +16,16 @@ func (cinema Cinema) MovieRoute(r *mux.Router) {
 	r.HandleFunc("/admin/movie/{id:[0-9]+}", cinema.MovieDelete).Methods("DELETE")
 
 	r.HandleFunc("/user/movie", cinema.MovieList).Methods("GET")
-	r.HandleFunc("/user/movie/{title:[a-zA-Z0-9-_]+}", cinema.MovieList).Methods("GET")
+	r.HandleFunc("/user/movie/{title:[a-zA-Z0-9-_]+}", cinema.MovieGetByTitle).Methods("GET")
 	r.HandleFunc("/user/movie/{id:[0-9]+}", cinema.MovieGet).Methods("GET")
 }
 
 func (cinema Cinema) MovieCreate(w http.ResponseWriter, r *http.Request) {
+	if authorization := cinema.Authorization.Authorization(r); authorization == nil || !authorization.IsAdmin {
+		cinema.Authorization.WriteUnauthorized(w)
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	record := model.Movie{}
 	if err := decoder.Decode(&record); err == nil {
@@ -35,6 +40,11 @@ func (cinema Cinema) MovieCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cinema Cinema) MovieList(w http.ResponseWriter, r *http.Request) {
+	if authorization := cinema.Authorization.Authorization(r); authorization == nil {
+		cinema.Authorization.WriteUnauthorized(w)
+		return
+	}
+
 	if records, err := cinema.MovieList_(); err == nil {
 		helper.WriteResponse(w, http.StatusOK, records, nil)
 	} else {
@@ -43,6 +53,11 @@ func (cinema Cinema) MovieList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cinema Cinema) MovieGet(w http.ResponseWriter, r *http.Request) {
+	if authorization := cinema.Authorization.Authorization(r); authorization == nil {
+		cinema.Authorization.WriteUnauthorized(w)
+		return
+	}
+
 	if id, err := strconv.Atoi(mux.Vars(r)["id"]); err == nil {
 		if record, err := cinema.MovieGet_(id); err == nil {
 			helper.WriteResponse(w, http.StatusOK, record, nil)
@@ -55,6 +70,11 @@ func (cinema Cinema) MovieGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cinema Cinema) MovieUpdate(w http.ResponseWriter, r *http.Request) {
+	if authorization := cinema.Authorization.Authorization(r); authorization == nil || !authorization.IsAdmin {
+		cinema.Authorization.WriteUnauthorized(w)
+		return
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	record := model.Movie{}
 	if err := decoder.Decode(&record); err == nil {
@@ -69,6 +89,11 @@ func (cinema Cinema) MovieUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cinema Cinema) MovieDelete(w http.ResponseWriter, r *http.Request) {
+	if authorization := cinema.Authorization.Authorization(r); authorization == nil || !authorization.IsAdmin {
+		cinema.Authorization.WriteUnauthorized(w)
+		return
+	}
+
 	if id, err := strconv.Atoi(mux.Vars(r)["id"]); err == nil {
 		if err := cinema.MovieDelete_(id); err == nil {
 			helper.WriteResponse(w, http.StatusOK, nil, nil)
@@ -81,6 +106,11 @@ func (cinema Cinema) MovieDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cinema Cinema) MovieGetByTitle(w http.ResponseWriter, r *http.Request) {
+	if authorization := cinema.Authorization.Authorization(r); authorization == nil {
+		cinema.Authorization.WriteUnauthorized(w)
+		return
+	}
+
 	title := mux.Vars(r)["title"]
 
 	if record, err := cinema.MovieGetByTitle_(title); err == nil {
