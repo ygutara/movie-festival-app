@@ -52,7 +52,7 @@ func (cinema Cinema) MovieDelete_(id int) (err error) {
 	if existedMovie, err = cinema.MovieGet_(id); err != nil {
 		return
 	} else {
-		if existedMovie == (model.Movie{}) {
+		if existedMovie.ID == 0 {
 			return model.ErrNotFound
 		}
 		return cinema.DB.Delete(&existedMovie).Error
