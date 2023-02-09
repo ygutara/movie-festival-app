@@ -9,7 +9,7 @@ import (
 	"github.com/ygutara/movie-festival-app/helper"
 )
 
-func (auth Auth) MovieRoute(r *mux.Router) {
+func (auth Auth) AuthRoute(r *mux.Router) {
 	r.HandleFunc("/user/register", auth.Register).Methods("POST")
 	r.HandleFunc("/user/login", auth.Login).Methods("POST")
 	r.HandleFunc("/user/logout", auth.Logout).Methods("POST")
@@ -25,11 +25,10 @@ func (auth Auth) Register(w http.ResponseWriter, r *http.Request) {
 	user := UserRegisterOrLogin{}
 
 	if err := decoder.Decode(&user); err == nil {
-		// DEBT token cookie
-		if _, err := auth.Register_(user); err == nil {
-			helper.WriteResponse(w, http.StatusOK, nil, nil)
+		if token, err := auth.Register_(user); err == nil {
+			helper.WriteResponse(w, http.StatusOK, map[string]string{"token": token}, nil)
 		} else {
-			helper.WriteResponse(w, http.StatusInternalServerError, nil, err)
+			helper.WriteResponse(w, http.StatusBadRequest, nil, err)
 		}
 	} else {
 		helper.WriteResponse(w, http.StatusBadRequest, nil, err)
@@ -46,11 +45,10 @@ func (auth Auth) Login(w http.ResponseWriter, r *http.Request) {
 	user := UserRegisterOrLogin{}
 
 	if err := decoder.Decode(&user); err == nil {
-		// DEBT token cookie
-		if _, err := auth.Login_(user); err == nil {
-			helper.WriteResponse(w, http.StatusOK, nil, nil)
+		if token, err := auth.Login_(user); err == nil {
+			helper.WriteResponse(w, http.StatusOK, map[string]string{"token": token}, nil)
 		} else {
-			helper.WriteResponse(w, http.StatusInternalServerError, nil, err)
+			helper.WriteResponse(w, http.StatusBadRequest, nil, err)
 		}
 	} else {
 		helper.WriteResponse(w, http.StatusBadRequest, nil, err)
@@ -59,7 +57,6 @@ func (auth Auth) Login(w http.ResponseWriter, r *http.Request) {
 
 func (auth Auth) Logout(w http.ResponseWriter, r *http.Request) {
 	reqToken := r.Header.Get("Authorization")
-
 	token := auth.GetBearerToken(reqToken)
 
 	if err := auth.Logout_(token); err == nil {

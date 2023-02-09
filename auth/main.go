@@ -28,9 +28,9 @@ func (auth Auth) Authorization(r *http.Request) (authorization *AuthorizationDat
 	reqToken := r.Header.Get("Authorization")
 
 	token := auth.GetBearerToken(reqToken)
-
 	userToken, _ := auth.UserTokenGet(token)
 	if userToken.User != nil {
+		authorization = &AuthorizationData{}
 		authorization.UserID = userToken.User.ID
 		authorization.IsAdmin = userToken.User.IsAdmin
 	}

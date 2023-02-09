@@ -10,10 +10,10 @@ import (
 
 func (auth Auth) Register_(userTemplate UserRegisterOrLogin) (token string, err error) {
 	userExisted, _ := auth.UserGet(userTemplate.Username)
-	if userExisted.Username == "" {
+	if userTemplate.Username == "" {
 		err = errors.New("username can not be blank")
 		return
-	} else if userExisted.Username == "" {
+	} else if userExisted.Username == userTemplate.Username {
 		err = errors.New("username has been used")
 		return
 	}
@@ -24,7 +24,7 @@ func (auth Auth) Register_(userTemplate UserRegisterOrLogin) (token string, err 
 
 	auth.DB.Create(&user)
 
-	auth.UserTokenCreate(user.ID)
+	token = auth.UserTokenCreate(user.ID)
 
 	return
 }
@@ -37,13 +37,12 @@ func (auth Auth) Login_(userTemplate UserRegisterOrLogin) (token string, err err
 		return
 	}
 
-	auth.UserTokenCreate(userExisted.ID)
+	token = auth.UserTokenCreate(userExisted.ID)
 
 	return
 }
 
 func (auth Auth) Logout_(token string) (err error) {
-	token = auth.GetBearerToken(token)
 	db := auth.DB
 	userToken := model.UserToken{}
 

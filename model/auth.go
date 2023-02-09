@@ -8,7 +8,7 @@ type User struct {
 }
 
 func (User) TableName() string {
-	return "user"
+	return "user_app"
 }
 
 type UserToken struct {
