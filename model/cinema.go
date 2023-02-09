@@ -16,6 +16,7 @@ type Movie struct {
 	Viewers       []User         `json:"viewers" gorm:"many2many:viewers;save_associations:false"`
 	Rating        float64        `json:"rating"`
 	RatingDetails []RatingDetail `json:"rating_details"`
+	MaxPage       int            `json:"-"`
 	CreatedAt     time.Time      `json:"created_at"`
 	UpdatedAt     time.Time      `json:"updated_at"`
 }

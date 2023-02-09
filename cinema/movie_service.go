@@ -1,6 +1,7 @@
 package cinema
 
 import (
+	"errors"
 	"time"
 
 	"github.com/ygutara/movie-festival-app/model"
@@ -38,8 +39,32 @@ func (cinema Cinema) MovieGetByTitle_(title string) (record model.Movie, err err
 	return
 }
 
-func (cinema Cinema) MovieList_() (records []model.Movie, err error) {
-	err = cinema.DB.Find(&records).Error
+func (cinema Cinema) MovieBrowse_(search string, page int) (records []model.Movie, err error) {
+	if page <= 0 {
+		err = errors.New("Must be higher than 0")
+	}
+	search = "%" + search + "%"
+
+	query := `SELECT 
+					*, 
+					ceil(count(*) OVER () / 10.0) AS max_page 
+				FROM movie
+				WHERE LOWER(title) LIKE LOWER(?) OR
+					  LOWER(description) LIKE LOWER(?) OR
+					  id IN (SELECT movie_id FROM movie_gendre
+							 WHERE gendre_id IN (SELECT id FROM gendre
+												 WHERE LOWER(name) LIKE LOWER(?)
+												 )
+							) OR
+					  id IN (SELECT movie_id FROM movie_artist
+							 WHERE artist_id IN (SELECT id FROM artist
+												 WHERE LOWER(name) LIKE LOWER(?)
+												)
+							)
+				ORDER BY movie.id
+				LIMIT 10 OFFSET (? - 1) * 10`
+
+	err = cinema.DB.Raw(query, search, search, search, search, page).Scan(&records).Error
 	return
 }
 

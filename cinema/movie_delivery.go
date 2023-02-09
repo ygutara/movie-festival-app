@@ -17,7 +17,7 @@ func (cinema Cinema) MovieRoute(r *mux.Router) {
 	r.HandleFunc("/admin/movie/most_viewed_gendre", cinema.MostViewedGendre).Methods("GET")
 	r.HandleFunc("/admin/movie/{id:[0-9]+}", cinema.MovieDelete).Methods("DELETE")
 
-	r.HandleFunc("/user/movie", cinema.MovieList).Methods("GET")
+	r.HandleFunc("/user/movie/browse", cinema.MovieBrowse).Methods("GET")
 	r.HandleFunc("/user/movie/{id:[0-9]+}", cinema.MovieGet).Methods("GET")
 	r.HandleFunc("/user/movie/{title:[a-zA-Z0-9-_]+}", cinema.MovieGetByTitle).Methods("GET")
 }
@@ -41,16 +41,30 @@ func (cinema Cinema) MovieCreate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (cinema Cinema) MovieList(w http.ResponseWriter, r *http.Request) {
+func (cinema Cinema) MovieBrowse(w http.ResponseWriter, r *http.Request) {
 	if authorization := cinema.Authorization.Authorization(r); authorization == nil {
 		cinema.Authorization.WriteUnauthorized(w)
 		return
 	}
+	decoder := json.NewDecoder(r.Body)
+	param := struct {
+		Search string `json:"search"`
+		Page   int    `json:"page"`
+	}{}
 
-	if records, err := cinema.MovieList_(); err == nil {
-		helper.WriteResponse(w, http.StatusOK, records, nil)
+	if err := decoder.Decode(&param); err == nil {
+		if records, err := cinema.MovieBrowse_(param.Search, param.Page); err == nil {
+			maxPage := 0
+			if len(records) > 0 {
+				maxPage = records[0].MaxPage
+			}
+
+			helper.WriteResponse(w, http.StatusOK, map[string]interface{}{"max_page": maxPage, "records": records}, nil)
+		} else {
+			helper.WriteResponse(w, http.StatusInternalServerError, nil, model.ErrInternalServerError)
+		}
 	} else {
-		helper.WriteResponse(w, http.StatusInternalServerError, nil, model.ErrInternalServerError)
+		helper.WriteResponse(w, http.StatusBadRequest, nil, err)
 	}
 }
 
