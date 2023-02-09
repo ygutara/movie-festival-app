@@ -12,7 +12,7 @@ type Movie struct {
 	Image         string         `json:"image"`
 	URL           string         `json:"url"`
 	Artists       []Artist       `json:"artists" gorm:"many2many:movie_artist;save_associations:false"`
-	Gendres       []Gendre       `json:"tag" gorm:"many2many:movie_genre;save_associations:false"`
+	Gendres       []Gendre       `json:"gendres" gorm:"many2many:movie_gendre;save_associations:false"`
 	Viewers       []User         `json:"viewers" gorm:"many2many:viewers;save_associations:false"`
 	Rating        float64        `json:"rating"`
 	RatingDetails []RatingDetail `json:"rating_details"`

@@ -13,11 +13,13 @@ import (
 func (cinema Cinema) MovieRoute(r *mux.Router) {
 	r.HandleFunc("/admin/movie/create", cinema.MovieCreate).Methods("POST")
 	r.HandleFunc("/admin/movie/update", cinema.MovieUpdate).Methods("PATCH")
+	r.HandleFunc("/admin/movie/most_viewed_movie", cinema.MostViewedMovie).Methods("GET")
+	r.HandleFunc("/admin/movie/most_viewed_gendre", cinema.MostViewedGendre).Methods("GET")
 	r.HandleFunc("/admin/movie/{id:[0-9]+}", cinema.MovieDelete).Methods("DELETE")
 
 	r.HandleFunc("/user/movie", cinema.MovieList).Methods("GET")
-	r.HandleFunc("/user/movie/{title:[a-zA-Z0-9-_]+}", cinema.MovieGetByTitle).Methods("GET")
 	r.HandleFunc("/user/movie/{id:[0-9]+}", cinema.MovieGet).Methods("GET")
+	r.HandleFunc("/user/movie/{title:[a-zA-Z0-9-_]+}", cinema.MovieGetByTitle).Methods("GET")
 }
 
 func (cinema Cinema) MovieCreate(w http.ResponseWriter, r *http.Request) {
@@ -114,6 +116,32 @@ func (cinema Cinema) MovieGetByTitle(w http.ResponseWriter, r *http.Request) {
 	title := mux.Vars(r)["title"]
 
 	if record, err := cinema.MovieGetByTitle_(title); err == nil {
+		helper.WriteResponse(w, http.StatusOK, record, nil)
+	} else {
+		helper.WriteResponse(w, http.StatusNotFound, nil, err)
+	}
+}
+
+func (cinema Cinema) MostViewedMovie(w http.ResponseWriter, r *http.Request) {
+	if authorization := cinema.Authorization.Authorization(r); authorization == nil {
+		cinema.Authorization.WriteUnauthorized(w)
+		return
+	}
+
+	if record, err := cinema.MostViewedMovie_(); err == nil {
+		helper.WriteResponse(w, http.StatusOK, record, nil)
+	} else {
+		helper.WriteResponse(w, http.StatusNotFound, nil, err)
+	}
+}
+
+func (cinema Cinema) MostViewedGendre(w http.ResponseWriter, r *http.Request) {
+	if authorization := cinema.Authorization.Authorization(r); authorization == nil {
+		cinema.Authorization.WriteUnauthorized(w)
+		return
+	}
+
+	if record, err := cinema.MostViewedGendre_(); err == nil {
 		helper.WriteResponse(w, http.StatusOK, record, nil)
 	} else {
 		helper.WriteResponse(w, http.StatusNotFound, nil, err)
