@@ -34,6 +34,80 @@ func (cinema Cinema) MostViewedGendre_() (record model.Gendre, err error) {
 	return
 }
 
+func (cinema Cinema) MovieWatch_(id int, userId int) (err error) {
+
+	err = cinema.DB.Exec("INSERT INTO viewers (movie_id, user_id) SELECT ?, ? WHERE NOT EXISTS (SELECT 1 FROM viewers WHERE movie_id = ? AND user_id = ?)", id, userId, id, userId).Error
+
+	return
+}
+
+func (cinema Cinema) MovieVote_(rating model.RatingDetail) (err error) {
+	ratingExisted := model.RatingDetail{}
+	rating.ID = 0
+	if rating.Rating <= 0 {
+		rating.Rating = 1
+	} else if rating.Rating > 5 {
+		rating.Rating = 5
+	}
+
+	_, err = cinema.MovieGet_(rating.MovieID)
+	if err != nil {
+		return
+	}
+
+	cinema.DB.Where("movie_id = ? AND user_id = ?", rating.MovieID, rating.UserID).Find(&ratingExisted)
+	if ratingExisted.ID != 0 {
+		err = errors.New("already voted")
+	}
+
+	cinema.DB.Create(&rating)
+
+	cinema.RecalculateRating(rating.MovieID)
+
+	return
+}
+
+func (cinema Cinema) MovieUnvote_(movieId int, userId int) (err error) {
+	ratingExisted := model.RatingDetail{}
+
+	_, err = cinema.MovieGet_(movieId)
+	if err != nil {
+		return
+	}
+
+	cinema.DB.Where("movie_id = ? AND user_id = ?", movieId, userId).Find(&ratingExisted)
+	if ratingExisted.ID == 0 {
+		err = errors.New("not vote yet")
+	}
+
+	cinema.DB.Exec("DELETE FROM rating_detail WHERE movie_id = ? AND user_id = ?", movieId, userId)
+
+	cinema.RecalculateRating(movieId)
+
+	return
+}
+
+func (cinema Cinema) RecalculateRating(movieId int) {
+	ratings := []model.RatingDetail{}
+	cinema.DB.Where("movie_id = ?", movieId).Find(&ratings)
+
+	ratingTotal := 0.0
+	for i := range ratings {
+		ratingTotal += ratings[i].Rating
+	}
+
+	rating := ratingTotal / float64(len(ratings))
+
+	cinema.DB.Model(&model.Movie{}).Where("id = ?", movieId).Update("rating", rating)
+}
+
+func (cinema Cinema) MovieListVoted_(userId int) (records []model.RatingDetail, err error) {
+
+	err = cinema.DB.Preload("Movie").Preload("Movie.Artists").Preload("Movie.Gendres").Where("user_id = ?", userId).Find(&records).Error
+
+	return
+}
+
 func (cinema Cinema) MovieGetByTitle_(title string) (record model.Movie, err error) {
 	err = cinema.DB.Where("title = ?", title).First(&record).Error
 	return

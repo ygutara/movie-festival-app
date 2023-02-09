@@ -15,10 +15,16 @@ func (cinema Cinema) MovieRoute(r *mux.Router) {
 	r.HandleFunc("/admin/movie/update", cinema.MovieUpdate).Methods("PATCH")
 	r.HandleFunc("/admin/movie/most_viewed_movie", cinema.MostViewedMovie).Methods("GET")
 	r.HandleFunc("/admin/movie/most_viewed_gendre", cinema.MostViewedGendre).Methods("GET")
+
 	r.HandleFunc("/admin/movie/{id:[0-9]+}", cinema.MovieDelete).Methods("DELETE")
 
 	r.HandleFunc("/user/movie/browse", cinema.MovieBrowse).Methods("GET")
 	r.HandleFunc("/user/movie/{id:[0-9]+}", cinema.MovieGet).Methods("GET")
+	r.HandleFunc("/user/movie/watch/{id:[0-9]+}", cinema.MovieWatch).Methods("GET")
+	r.HandleFunc("/user/movie/vote", cinema.MovieVote).Methods("POST")
+	r.HandleFunc("/user/movie/unvote", cinema.MovieUnvote).Methods("POST")
+	r.HandleFunc("/user/movie/list_voted", cinema.MovieListVoted).Methods("GET")
+
 	r.HandleFunc("/user/movie/{title:[a-zA-Z0-9-_]+}", cinema.MovieGetByTitle).Methods("GET")
 }
 
@@ -159,5 +165,79 @@ func (cinema Cinema) MostViewedGendre(w http.ResponseWriter, r *http.Request) {
 		helper.WriteResponse(w, http.StatusOK, record, nil)
 	} else {
 		helper.WriteResponse(w, http.StatusNotFound, nil, err)
+	}
+}
+
+func (cinema Cinema) MovieWatch(w http.ResponseWriter, r *http.Request) {
+	authorization := cinema.Authorization.Authorization(r)
+	if authorization == nil {
+		cinema.Authorization.WriteUnauthorized(w)
+		return
+	}
+
+	if id, err := strconv.Atoi(mux.Vars(r)["id"]); err == nil {
+		if err := cinema.MovieWatch_(id, authorization.UserID); err == nil {
+			helper.WriteResponse(w, http.StatusOK, nil, nil)
+		} else {
+			helper.WriteResponse(w, http.StatusInternalServerError, nil, err)
+		}
+	} else {
+		helper.WriteResponse(w, http.StatusBadRequest, nil, model.ErrBadParamInput)
+	}
+}
+
+func (cinema Cinema) MovieVote(w http.ResponseWriter, r *http.Request) {
+	authorization := cinema.Authorization.Authorization(r)
+	if authorization == nil {
+		cinema.Authorization.WriteUnauthorized(w)
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	record := model.RatingDetail{}
+
+	if err := decoder.Decode(&record); err == nil {
+		record.UserID = authorization.UserID
+		if err := cinema.MovieVote_(record); err == nil {
+			helper.WriteResponse(w, http.StatusOK, nil, nil)
+		} else {
+			helper.WriteResponse(w, http.StatusBadRequest, nil, err)
+		}
+	} else {
+		helper.WriteResponse(w, http.StatusBadRequest, nil, err)
+	}
+}
+
+func (cinema Cinema) MovieUnvote(w http.ResponseWriter, r *http.Request) {
+	authorization := cinema.Authorization.Authorization(r)
+	if authorization == nil {
+		cinema.Authorization.WriteUnauthorized(w)
+		return
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	record := model.RatingDetail{}
+	if err := decoder.Decode(&record); err == nil {
+		if err := cinema.MovieUnvote_(record.MovieID, authorization.UserID); err == nil {
+			helper.WriteResponse(w, http.StatusOK, nil, nil)
+		} else {
+			helper.WriteResponse(w, http.StatusBadRequest, nil, err)
+		}
+	} else {
+		helper.WriteResponse(w, http.StatusBadRequest, nil, err)
+	}
+}
+
+func (cinema Cinema) MovieListVoted(w http.ResponseWriter, r *http.Request) {
+	authorization := cinema.Authorization.Authorization(r)
+	if authorization == nil {
+		cinema.Authorization.WriteUnauthorized(w)
+		return
+	}
+
+	if records, err := cinema.MovieListVoted_(authorization.UserID); err == nil {
+		helper.WriteResponse(w, http.StatusOK, map[string]interface{}{"records": records}, nil)
+	} else {
+		helper.WriteResponse(w, http.StatusInternalServerError, nil, err)
 	}
 }

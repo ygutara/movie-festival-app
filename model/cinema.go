@@ -46,6 +46,7 @@ func (Gendre) TableName() string {
 type RatingDetail struct {
 	ID      int     `json:"id" gorm:"primaryKey"`
 	MovieID int     `json:"movie_id"`
+	Movie   *Movie  `json:"movie" gorm:"save_associations:false"`
 	UserID  int     `json:"user_id"`
 	User    *User   `json:"user" gorm:"save_associations:false"`
 	Rating  float64 `json:"rating"`
