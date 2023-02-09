@@ -27,6 +27,7 @@ and user can watch, vote, and unvote
 - Run the command go mod download to install dependencies
 - Run 'cd /app/config' and edit config.go to change database's configuration 
 - Run 'cd /app/migration' and run 'go run migration.go'
+- username = admin, password = admin 
 - Back to the application directory 
 - Run the command 'go run main.go'
 - Api Application can be accessed at 'http://localhost:8080'
