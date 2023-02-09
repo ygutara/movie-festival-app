@@ -8,7 +8,7 @@ import (
 )
 
 func (cinema Cinema) MovieGet_(id int) (record model.Movie, err error) {
-	err = cinema.DB.Preload("Artists").Preload("Gendres").Where("id = ?", id).First(&record).Error
+	err = cinema.DB.Preload("Artists").Preload("Gendres").Preload("Viewers").Where("id = ?", id).First(&record).Error
 	return
 }
 
@@ -19,7 +19,7 @@ func (cinema Cinema) MostViewedMovie_() (record model.Movie, err error) {
 					ORDER BY COUNT(viewers.movie_id) DESC
 					LIMIT 1)`
 
-	err = cinema.DB.Preload("Artists").Preload("Gendres").Where(query).First(&record).Error
+	err = cinema.DB.Preload("Artists").Preload("Gendres").Preload("Viewers").Where(query).First(&record).Error
 	return
 }
 
