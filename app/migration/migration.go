@@ -12,12 +12,13 @@ import (
 )
 
 func main() {
-	dsn := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s", config.DB_HOST, config.DB_USER, config.DB_NAME, config.DB_PASSWORD)
+	dsn := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", config.DB_HOST, config.DB_PORT, config.DB_USER, config.DB_NAME, config.DB_PASSWORD)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
+		fmt.Println("MIGRATION failed")
 		panic("error connect to DB")
 	}
 	sqlDB, _ := db.DB()
@@ -29,6 +30,7 @@ func main() {
 	CreateArtistData(db)
 	CreateGendreData(db)
 
+	fmt.Println("MIGRATION SUCCESS")
 }
 
 func CreateUserAdmin(db *gorm.DB) {

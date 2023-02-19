@@ -15,12 +15,13 @@ import (
 )
 
 func main() {
-	dsn := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s", config.DB_HOST, config.DB_USER, config.DB_NAME, config.DB_PASSWORD)
+	dsn := fmt.Sprintf("host=%s port=%s user=%s dbname=%s sslmode=disable password=%s", config.DB_HOST, config.DB_PORT, config.DB_USER, config.DB_NAME, config.DB_PASSWORD)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
 	if err != nil {
+		fmt.Println(err.Error())
 		panic("error connect to DB")
 	}
 	sqlDB, _ := db.DB()
@@ -42,7 +43,7 @@ func main() {
 	})
 
 	// Handler
-	fmt.Println("Listening to port 8080...")
+	fmt.Println("Listening to port " + config.APP_PORT + "...")
 	handler := corsWrapper.Handler(router)
-	http.ListenAndServe(":8080", handler)
+	http.ListenAndServe(":"+config.APP_PORT, handler)
 }
