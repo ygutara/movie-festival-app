@@ -31,3 +31,9 @@ and user can watch, vote, and unvote
 - Back to the application directory 
 - Run the command 'go run main.go'
 - Api Application can be accessed at 'http://localhost:8080'
+
+# Installation using Docker Compose
+- Open terminal and navigate to the application directory
+- run 'docker compose create'
+- run 'docker compose start'
+
